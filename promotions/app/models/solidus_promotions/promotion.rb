@@ -5,6 +5,7 @@ module SolidusPromotions
     UNACTIVATABLE_ORDER_STATES = ["awaiting_return", "returned", "canceled"]
 
     include Spree::SoftDeletable
+    include SolidusPromotions::CouponCodeSensitivity
 
     belongs_to :category,
       class_name: "SolidusPromotions::PromotionCategory",
@@ -46,7 +47,7 @@ module SolidusPromotions
 
     def self.with_coupon_code(val)
       joins(:codes).where(
-        SolidusPromotions::PromotionCode.arel_table[:value].eq(val.downcase)
+        SolidusPromotions::PromotionCode.arel_table[:value].eq(coupon_code_sensitive? ? val : val.downcase)
       ).first
     end
 

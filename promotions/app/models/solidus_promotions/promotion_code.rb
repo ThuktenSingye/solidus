@@ -2,6 +2,7 @@
 
 module SolidusPromotions
   class PromotionCode < Spree::Base
+    include SolidusPromotions::CouponCodeSensitivity
     belongs_to :promotion, -> { with_discarded }, inverse_of: :codes
     belongs_to :promotion_code_batch, inverse_of: :promotion_codes, optional: true
 
@@ -50,7 +51,7 @@ module SolidusPromotions
     private
 
     def normalize_code
-      self.value = value.downcase.strip
+      self.value = coupon_code_sensitive? ? value.strip : value.downcase.strip
     end
   end
 end

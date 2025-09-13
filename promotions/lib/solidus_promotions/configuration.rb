@@ -106,6 +106,8 @@ module SolidusPromotions
 
     preference :use_new_admin, :boolean, default: false
 
+    preference :coupon_code_sensitive, :boolean, default: false
+
     def use_new_admin?
       SolidusSupport.admin_available? && preferred_use_new_admin
     end
