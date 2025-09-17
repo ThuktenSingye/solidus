@@ -38,6 +38,7 @@ gem 'db-query-matchers', require: false
 
 # Ensure the requirement is also updated in core/lib/spree/testing_support/factory_bot.rb
 gem 'factory_bot_rails', '>= 4.8', require: false
+gem 'pry'
 
 group :backend do
   gem 'capybara', '~> 3.13', require: false

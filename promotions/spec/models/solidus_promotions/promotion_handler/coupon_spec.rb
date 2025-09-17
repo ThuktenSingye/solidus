@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "rails_helper"
+require 'pry'
 
 RSpec.describe SolidusPromotions::PromotionHandler::Coupon, type: :model do
   let(:order) { double("Order", coupon_code: "10off").as_null_object }
@@ -113,7 +114,6 @@ RSpec.describe SolidusPromotions::PromotionHandler::Coupon, type: :model do
             order.line_items.each do |line_item|
               expect_adjustment_creation(adjustable: line_item, promotion: promotion)
             end
-            # Ensure that applying the adjustment actually affects the order's total!
             expect(order.reload.total).to eq(100)
           end
 
@@ -136,7 +136,6 @@ RSpec.describe SolidusPromotions::PromotionHandler::Coupon, type: :model do
             order.line_items.each do |line_item|
               expect_adjustment_creation(adjustable: line_item, promotion: promotion)
             end
-            # Ensure that applying the adjustment actually affects the order's total!
             expect(order.reload.total).to eq(100)
           end
         end
@@ -187,6 +186,38 @@ RSpec.describe SolidusPromotions::PromotionHandler::Coupon, type: :model do
           end
         end
       end
+
+      context "with case-sensitive coupon codes enabled" do
+        around do |example|
+          SolidusPromotions.config.coupon_code_sensitive = true
+          example.run
+          SolidusPromotions.config.coupon_code_sensitive = false
+        end
+
+        context "with exact case match" do
+          before { order.coupon_code = "10off" }
+
+          it "successfully apply promo" do
+            expect(order.total).to eq(130)
+            subject.apply
+            expect(subject.success).to be_present
+            expect_order_connection(order: order, promotion: promotion, promotion_code: promotion_code)
+            expect(order.reload.total).to eq(100)
+          end
+        end
+
+        context "with incorrect case" do
+          before { order.coupon_code = "10OFF" }
+
+          it "fails to apply promo" do
+            expect(order.total).to eq(130)
+            subject.apply
+            expect(subject.success).to be_blank
+            expect(subject.error).to eq("The coupon code you entered doesn't exist. Please try again.")
+            expect(order.reload.total).to eq(130)
+          end
+        end
+      end
     end
 
     context "with a free-shipping adjustment benefit" do
@@ -197,6 +228,7 @@ RSpec.describe SolidusPromotions::PromotionHandler::Coupon, type: :model do
         )
       end
       let(:calculator) { SolidusPromotions::Calculators::Percent.new(preferred_percent: 100) }
+
       context "right coupon code given" do
         let(:order) { create(:order_with_line_items, line_items_count: 3) }
 
@@ -218,6 +250,43 @@ RSpec.describe SolidusPromotions::PromotionHandler::Coupon, type: :model do
           expect(subject.success).to be_present
           subject.apply
           expect(subject.error).to eq "The coupon code has already been applied to this order"
+        end
+      end
+
+      context "with case-sensitive coupon codes enabled" do
+        around do |example|
+          SolidusPromotions.config.coupon_code_sensitive = true
+          example.run
+          SolidusPromotions.config.coupon_code_sensitive = false
+        end
+
+        let(:order) { create(:order_with_line_items, line_items_count: 3) }
+
+        context "with exact case match" do
+          before { order.coupon_code = "10off" }
+
+          it "successfully apply promo" do
+            expect(order.total).to eq(130)
+            subject.apply
+            expect(subject.success).to be_present
+
+            expect_order_connection(order: order, promotion: promotion, promotion_code: promotion_code)
+            order.shipments.each do |shipment|
+              expect_adjustment_creation(adjustable: shipment, promotion: promotion)
+            end
+          end
+        end
+
+        context "with incorrect case" do
+          before { order.coupon_code = "10OFF" }
+
+          it "fails to apply promo" do
+            expect(order.total).to eq(130)
+            subject.apply
+            expect(subject.success).to be_blank
+            expect(subject.error).to eq("The coupon code you entered doesn't exist. Please try again.")
+            expect(order.reload.total).to eq(130)
+          end
         end
       end
     end

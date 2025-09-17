@@ -26,6 +26,7 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "csv", "~> 3.0"
   spec.add_dependency "importmap-rails", [">= 2.0", "< 3"]
+  spec.add_dependency "pry"
   spec.add_dependency "ransack-enum", "~> 1.0"
   spec.add_dependency "solidus_core", [">= 4.0.0", "< 5"]
   spec.add_dependency "solidus_support", ">= 0.12.0"
