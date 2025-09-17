@@ -28,6 +28,8 @@ module Spree
     include Spree::Order::Payments
     include Metadata
 
+    include ::SolidusPromotions::CouponCodeSensitivity
+
     class InsufficientStock < StandardError
       attr_reader :items
 
@@ -467,7 +469,7 @@ module Spree
 
     def coupon_code=(code)
       @coupon_code = begin
-                       code.strip.downcase
+                       coupon_code_sensitive? ? code.strip : code.strip.downcase
                      rescue StandardError
                        nil
                      end
