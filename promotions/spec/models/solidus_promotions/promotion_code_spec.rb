@@ -68,11 +68,7 @@ RSpec.describe SolidusPromotions::PromotionCode do
   end
 
   context "callbacks when coupon_code_sensitive is true" do
-    around do |example|
-      SolidusPromotions.config.coupon_code_sensitive = true
-      example.run
-      SolidusPromotions.config.coupon_code_sensitive = false
-    end
+    before { stub_spree_preferences(SolidusPromotions.configuration, preferred_coupon_code_sensitive: true) }
 
     subject { promotion_code.save }
 

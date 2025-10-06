@@ -188,11 +188,7 @@ RSpec.describe SolidusPromotions::PromotionHandler::Coupon, type: :model do
       end
 
       context "with case-sensitive coupon codes enabled" do
-        around do |example|
-          SolidusPromotions.config.coupon_code_sensitive = true
-          example.run
-          SolidusPromotions.config.coupon_code_sensitive = false
-        end
+        before { stub_spree_preferences(SolidusPromotions.configuration, preferred_coupon_code_sensitive: true) }
 
         context "with exact case match" do
           before { order.coupon_code = "10off" }
@@ -254,11 +250,7 @@ RSpec.describe SolidusPromotions::PromotionHandler::Coupon, type: :model do
       end
 
       context "with case-sensitive coupon codes enabled" do
-        around do |example|
-          SolidusPromotions.config.coupon_code_sensitive = true
-          example.run
-          SolidusPromotions.config.coupon_code_sensitive = false
-        end
+        before { stub_spree_preferences(SolidusPromotions.configuration, preferred_coupon_code_sensitive: true) }
 
         let(:order) { create(:order_with_line_items, line_items_count: 3) }
 

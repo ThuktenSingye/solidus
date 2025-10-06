@@ -14,6 +14,7 @@ module SolidusPromotions
         dependent: :destroy,
         inverse_of: :order
       base.has_many :solidus_promotions, through: :solidus_order_promotions, source: :promotion
+      base.include SolidusPromotions::CouponCodeSensitivity
     end
 
     def discountable_item_total
