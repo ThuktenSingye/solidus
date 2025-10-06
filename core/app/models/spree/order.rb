@@ -28,8 +28,6 @@ module Spree
     include Spree::Order::Payments
     include Metadata
 
-    include ::SolidusPromotions::CouponCodeSensitivity
-
     class InsufficientStock < StandardError
       attr_reader :items
 
@@ -890,3 +888,6 @@ module Spree
     end
   end
 end
+
+
+# Next task is how to include the promotion config / concern in the spree core

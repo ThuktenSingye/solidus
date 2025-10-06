@@ -2042,18 +2042,6 @@ RSpec.describe Spree::Order, type: :model do
         expect { subject }.not_to change { order.coupon_code }.from(nil)
       end
     end
-
-    context "when coupon code case sensitive is true" do
-      around do |example|
-        ::SolidusPromotions.config.coupon_code_sensitive = true
-        example.run
-        ::SolidusPromotions.config.coupon_code_sensitive = false
-      end
-
-      it "stores the coupon code on the order as is" do
-        expect { subject }.to change { order.coupon_code }.from(nil).to("10OFF")
-      end
-    end
   end
 
   describe "#refresh_shipment_rates" do
