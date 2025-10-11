@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "rails_helper"
+require 'pry'
 
 RSpec.describe SolidusPromotions::Promotion, type: :model do
   let(:promotion) { described_class.new }
@@ -144,6 +145,38 @@ RSpec.describe SolidusPromotions::Promotion, type: :model do
 
     it "returns only distinct promotions with a code associated" do
       expect(subject).to eq [promotion_with_code]
+    end
+  end
+
+  describe ".with_coupon_code" do
+    context "when case sensitivity is disabled (default)" do
+      let!(:promotion) { create(:solidus_promotion, code: "10Off") }
+
+      it "finds promotion with case-insensitive match" do
+        expect(described_class.with_coupon_code("10off")).to eq(promotion)
+        expect(described_class.with_coupon_code("10OFF")).to eq(promotion)
+        expect(described_class.with_coupon_code("10OfF")).to eq(promotion)
+      end
+
+      it "normalizes the promotion code to lowercase on creation" do
+        expect(promotion.codes.first.value).to eq("10off")
+      end
+    end
+
+    context "when case sensitivity is enabled" do
+      before { stub_spree_preferences(SolidusPromotions.configuration, preferred_coupon_code_sensitive: true) }
+
+      let!(:promotion) { create(:solidus_promotion, code: "10Off") }
+
+      it "requires exact case match" do
+        expect(described_class.with_coupon_code("10Off")).to eq(promotion)
+        expect(described_class.with_coupon_code("10OFF")).to be_nil
+        expect(described_class.with_coupon_code("10off")).to be_nil
+      end
+
+      it "preserves the original case on creation" do
+        expect(promotion.codes.first.value).to eq("10Off")
+      end
     end
   end
 
