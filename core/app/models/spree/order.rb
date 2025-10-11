@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'pry'
 module Spree
   # The customers cart until completed, then acts as permanent record of the transaction.
   #
@@ -467,7 +468,11 @@ module Spree
 
     def coupon_code=(code)
       @coupon_code = begin
-                       coupon_code_sensitive? ? code.strip : code.strip.downcase
+                       if respond_to?(:coupon_code_sensitive?) && coupon_code_sensitive?
+                         code.strip
+                       else
+                         code.strip.downcase
+                       end
                      rescue StandardError
                        nil
                      end
