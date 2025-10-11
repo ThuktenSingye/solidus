@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "rails_helper"
+require 'pry'
 
 RSpec.describe SolidusPromotions::PromotionCode do
   let(:promotion) { create(:solidus_promotion) }
@@ -62,6 +63,83 @@ RSpec.describe SolidusPromotions::PromotionCode do
               "has already been taken"
             )
           end
+        end
+      end
+    end
+  end
+
+  context "callbacks when coupon code case sensitive is true" do
+    before do
+      stub_const("CaseSensitiveNormalizer", Class.new do
+        def self.call(value)
+          value&.strip
+        end
+      end)
+
+      stub_spree_preferences(
+        SolidusPromotions.configuration,
+        coupon_code_normalizer_class: CaseSensitiveNormalizer
+      )
+    end
+
+    subject { promotion_code.save }
+
+    let(:promotion) { create(:solidus_promotion, code: code) }
+
+    describe "#normalize_code" do
+
+      before { subject }
+
+      context "when no other code with the same value exists" do
+        let(:promotion_code) { promotion.codes.first }
+
+        context "with mixed case" do
+          let(:code) { "NewCoDe" }
+
+          it "does not downcase the value" do
+            expect(promotion_code.value).to eq("NewCoDe")
+          end
+        end
+
+        context "with extra spacing" do
+          let(:code) { " new code " }
+
+          it "remove surrounding whitespace" do
+            expect(promotion_code.value).to eq("new code")
+          end
+        end
+      end
+
+      context "when another code with the same value but different case exists" do
+        context "with mixed case" do
+          let(:promotion_code) { promotion.codes.build(value: "NewCoDe") }
+
+          let(:code) { "newcode" }
+
+          it "saves the record successfully as case sensitive" do
+            expect(promotion_code.valid?).to eq(true)
+          end
+        end
+
+        context "with extra spacing" do
+          let(:promotion_code) { promotion.codes.build(value: "NewCoDe") }
+
+          let(:code) { " newcode " }
+
+          it "saves the record successfully as case sensitive" do
+            expect(promotion_code.valid?).to eq(true)
+          end
+        end
+      end
+
+      context "when another code with the same value and same case exists" do
+        let(:promotion_code) { promotion.codes.build(value: "newcode") }
+
+        let(:code) { "newcode" }
+
+        it "does not save the record and marks it as invalid" do
+          expect(promotion_code.valid?).to eq(false)
+          expect(promotion_code.errors.messages[:value]).to contain_exactly("has already been taken")
         end
       end
     end

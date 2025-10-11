@@ -14,6 +14,7 @@ module SolidusPromotions
         dependent: :destroy,
         inverse_of: :order
       base.has_many :solidus_promotions, through: :solidus_order_promotions, source: :promotion
+      base.include SolidusPromotions::CouponCodeCaseSensitivity
     end
 
     def discountable_item_total
@@ -34,6 +35,14 @@ module SolidusPromotions
 
     def free_from_order_benefit?(line_item, _options)
       !line_item.managed_by_order_benefit
+    end
+
+    def coupon_code=(code)
+      @coupon_code = begin
+                       SolidusPromotions.config.coupon_code_normalizer_class.call(code)
+                     rescue StandardError
+                       nil
+                     end
     end
 
     Spree::Order.singleton_class.prepend self::ClassMethods

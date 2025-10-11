@@ -87,6 +87,7 @@ module SolidusPromotions
     }
 
     class_name_attribute :discount_chooser_class, default: "SolidusPromotions::OrderAdjuster::ChooseDiscounts"
+    class_name_attribute :coupon_code_normalizer_class, default: "SolidusPromotions::CaseInsensitiveCode"
     class_name_attribute :promotion_code_batch_mailer_class,
       default: "SolidusPromotions::PromotionCodeBatchMailer"
 

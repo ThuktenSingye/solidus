@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "rails_helper"
+require 'pry'
 
 RSpec.describe SolidusPromotions::PromotionHandler::Coupon, type: :model do
   let(:order) { double("Order", coupon_code: "10off").as_null_object }
@@ -187,6 +188,45 @@ RSpec.describe SolidusPromotions::PromotionHandler::Coupon, type: :model do
           end
         end
       end
+
+      context "with coupon code case sensitive enabled" do
+        before do
+          stub_const("CaseSensitiveNormalizer", Class.new do
+            def self.call(value)
+              value&.strip
+            end
+          end)
+
+          stub_spree_preferences(
+            SolidusPromotions.configuration,
+            coupon_code_normalizer_class: CaseSensitiveNormalizer
+          )
+        end
+
+        context "with exact case match" do
+          before { order.coupon_code = "10off" }
+
+          it "successfully apply promo" do
+            expect(order.total).to eq(130)
+            subject.apply
+            expect(subject.success).to be_present
+            expect_order_connection(order: order, promotion: promotion, promotion_code: promotion_code)
+            expect(order.reload.total).to eq(100)
+          end
+        end
+
+        context "with incorrect case" do
+          before { order.coupon_code = "10OFF" }
+
+          it "fails to apply promo" do
+            expect(order.total).to eq(130)
+            subject.apply
+            expect(subject.success).to be_blank
+            expect(subject.error).to eq("The coupon code you entered doesn't exist. Please try again.")
+            expect(order.reload.total).to eq(130)
+          end
+        end
+      end
     end
 
     context "with a free-shipping adjustment benefit" do
@@ -218,6 +258,50 @@ RSpec.describe SolidusPromotions::PromotionHandler::Coupon, type: :model do
           expect(subject.success).to be_present
           subject.apply
           expect(subject.error).to eq "The coupon code has already been applied to this order"
+        end
+      end
+
+      context "with coupon code case sensitive enabled" do
+        before do
+          stub_const("CaseSensitiveNormalizer", Class.new do
+            def self.call(value)
+              value&.strip
+            end
+          end)
+
+          stub_spree_preferences(
+            SolidusPromotions.configuration,
+            coupon_code_normalizer_class: CaseSensitiveNormalizer
+          )
+        end
+
+        let(:order) { create(:order_with_line_items, line_items_count: 3) }
+
+        context "with exact case match" do
+          before { order.coupon_code = "10off" }
+
+          it "successfully apply promo" do
+            expect(order.total).to eq(130)
+            subject.apply
+            expect(subject.success).to be_present
+
+            expect_order_connection(order: order, promotion: promotion, promotion_code: promotion_code)
+            order.shipments.each do |shipment|
+              expect_adjustment_creation(adjustable: shipment, promotion: promotion)
+            end
+          end
+        end
+
+        context "with incorrect case" do
+          before { order.coupon_code = "10OFF" }
+
+          it "fails to apply promo" do
+            expect(order.total).to eq(130)
+            subject.apply
+            expect(subject.success).to be_blank
+            expect(subject.error).to eq("The coupon code you entered doesn't exist. Please try again.")
+            expect(order.reload.total).to eq(130)
+          end
         end
       end
     end

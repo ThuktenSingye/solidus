@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+require 'pry'
 
 module SolidusPromotions
   class PromotionCode < Spree::Base
@@ -50,7 +51,7 @@ module SolidusPromotions
     private
 
     def normalize_code
-      self.value = value.downcase.strip
+      self.value = SolidusPromotions.config.coupon_code_normalizer_class.call(value)
     end
   end
 end
