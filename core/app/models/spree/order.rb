@@ -467,7 +467,11 @@ module Spree
 
     def coupon_code=(code)
       @coupon_code = begin
-                       code.strip.downcase
+                       if respond_to?(:coupon_code_sensitive?) && coupon_code_sensitive?
+                         code.strip
+                       else
+                         code.strip.downcase
+                       end
                      rescue StandardError
                        nil
                      end

@@ -3,13 +3,15 @@
 module SolidusPromotions
   module PromotionHandler
     class Coupon
+      include SolidusPromotions::CouponCodeCaseSensitivity
+
       attr_reader :order, :coupon_code, :errors
       attr_accessor :error, :success, :status_code
 
       def initialize(order)
         @order = order
         @errors = []
-        @coupon_code = order&.coupon_code&.downcase
+        @coupon_code = coupon_code_sensitive? ? order&.coupon_code : order&.coupon_code&.downcase
       end
 
       def apply
