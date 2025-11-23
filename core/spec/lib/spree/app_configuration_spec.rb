@@ -44,6 +44,10 @@ RSpec.describe Spree::AppConfiguration do
     expect(prefs.variant_price_selector_class).to eq Spree::Variant::PriceSelector
   end
 
+  it 'uses mergeable orders finder class by default' do
+    expect(prefs.mergeable_orders_finder_class).to eq Spree::MergeableOrdersFinder
+  end
+
   it "uses core's promotion configuration class by default" do
     expect(prefs.promotions).to be_a Spree::Core::NullPromotionConfiguration
   end
